@@ -4,11 +4,39 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ContractClarity - AI Legal Document Summarizer</title>
+    <title>Contract Clarity</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Apper SDK with error handling -->
+    <script>
+      // Global error handler for SDK
+      window.apperSDKError = false;
+      
+      // Canvas protection before SDK loads
+      window.addEventListener('DOMContentLoaded', function() {
+        // Ensure all canvas elements have minimum dimensions
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+              if (node.nodeName === 'CANVAS') {
+                if (node.width === 0) node.width = 1;
+                if (node.height === 0) node.height = 1;
+              }
+            });
+          });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+    
+    <!-- Load Apper SDK with error handling -->
+    <script 
+      src="https://cdn.apper.io/apper-dev-script/index.umd.js" 
+      onerror="window.apperSDKError = true; console.warn('Apper SDK failed to load');"
+      onload="console.log('Apper SDK loaded successfully');">
+    </script>
   </head>
   <body>
     <div id="root"></div>
