@@ -15,19 +15,78 @@
       window.apperSDKError = false;
       
       // Canvas protection before SDK loads
-      window.addEventListener('DOMContentLoaded', function() {
-        // Ensure all canvas elements have minimum dimensions
+window.addEventListener('DOMContentLoaded', function() {
+        // Enhanced canvas dimension enforcement for SDK compatibility
+        const ensureCanvasDimensions = function(canvas) {
+          try {
+            // Force minimum dimensions to prevent SDK canvas errors
+            if (canvas.width === 0 || canvas.width === null || canvas.width === undefined) {
+              canvas.width = 1;
+              canvas.setAttribute('width', '1');
+            }
+            if (canvas.height === 0 || canvas.height === null || canvas.height === undefined) {
+              canvas.height = 1;
+              canvas.setAttribute('height', '1');
+            }
+            
+            // Validate canvas context can be created
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              console.warn('Canvas context creation failed, creating fallback');
+              return;
+            }
+            
+            // Clear any invalid state
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          } catch (error) {
+            console.warn('Canvas dimension enforcement failed:', error);
+          }
+        };
+
+        // Process existing canvas elements
+        const existingCanvases = document.querySelectorAll('canvas');
+        existingCanvases.forEach(ensureCanvasDimensions);
+        
+        // Monitor for new canvas elements with enhanced checking
         const observer = new MutationObserver(function(mutations) {
           mutations.forEach(function(mutation) {
             mutation.addedNodes.forEach(function(node) {
               if (node.nodeName === 'CANVAS') {
-                if (node.width === 0) node.width = 1;
-                if (node.height === 0) node.height = 1;
+                // Immediate dimension fix
+                ensureCanvasDimensions(node);
+                
+                // Schedule recheck after potential SDK modifications
+                setTimeout(function() {
+                  ensureCanvasDimensions(node);
+                }, 100);
+              }
+              
+              // Check for canvas elements within added nodes
+              if (node.querySelectorAll) {
+                const canvases = node.querySelectorAll('canvas');
+                canvases.forEach(ensureCanvasDimensions);
               }
             });
           });
         });
-        observer.observe(document.body, { childList: true, subtree: true });
+        
+        observer.observe(document.body, { 
+          childList: true, 
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['width', 'height', 'style']
+        });
+        
+        // Periodic canvas validation to catch SDK-created elements
+        setInterval(function() {
+          const allCanvases = document.querySelectorAll('canvas');
+          allCanvases.forEach(function(canvas) {
+            if (canvas.width === 0 || canvas.height === 0) {
+              console.warn('Detected zero-dimension canvas, fixing:', canvas);
+              ensureCanvasDimensions(canvas);
+            }
+          });
+        }, 5000);
       });
     </script>
     

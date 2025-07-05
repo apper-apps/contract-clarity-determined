@@ -99,6 +99,28 @@ const preventCanvasErrors = () => {
   };
 };
 
+// Pre-SDK canvas validation
+const validateAllCanvases = () => {
+  try {
+    const canvases = document.querySelectorAll('canvas');
+    let fixedCount = 0;
+    
+    canvases.forEach(canvas => {
+      if (canvas.width === 0 || canvas.height === 0) {
+        canvas.width = Math.max(canvas.width, 1);
+        canvas.height = Math.max(canvas.height, 1);
+        fixedCount++;
+      }
+    });
+    
+    if (fixedCount > 0) {
+      console.log(`Fixed ${fixedCount} zero-dimension canvas elements before SDK init`);
+    }
+  } catch (error) {
+    console.warn('Canvas validation failed:', error);
+  }
+};
+
 // Initialize SDK safely after DOM is ready
 const initializeApperSDK = () => {
   return new Promise((resolve) => {
@@ -108,25 +130,47 @@ const initializeApperSDK = () => {
       window.addEventListener('load', resolve);
     }
   }).then(() => {
-    // Add small delay to ensure CSS is applied
-    return new Promise(resolve => setTimeout(resolve, 100));
+    // Validate all canvas elements before SDK initialization
+    validateAllCanvases();
+    
+    // Add small delay to ensure CSS is applied and canvas fixes are complete
+    return new Promise(resolve => setTimeout(resolve, 200));
   }).then(() => {
+    // Final canvas validation right before SDK init
+    validateAllCanvases();
+    
     if (window.Apper) {
       try {
         window.Apper.init?.({
           projectId: import.meta.env.VITE_APPER_PROJECT_ID,
           publicKey: import.meta.env.VITE_APPER_PUBLIC_KEY,
-          onError: handleApperError
+          onError: handleApperError,
+          // Add canvas error recovery option if supported
+          canvasErrorRecovery: true
         });
+        
+        // Post-init canvas validation
+        setTimeout(validateAllCanvases, 500);
       } catch (error) {
         handleApperError(error);
       }
+    } else if (window.apperSDKError) {
+      console.warn('Apper SDK failed to load, continuing without SDK features');
     }
+  }).catch(error => {
+    console.error('SDK initialization failed:', error);
+    handleApperError(error);
   });
 };
 
 // Apply canvas protection immediately
 preventCanvasErrors();
+
+// Initialize SDK with enhanced error handling
+initializeApperSDK().catch(error => {
+  console.error('Failed to initialize Apper SDK:', error);
+  // Continue without SDK - app should still function
+});
 
 // Initialize app
 ReactDOM.createRoot(document.getElementById('root')).render(
